@@ -78,7 +78,7 @@ var (
 			Name:      "per_project_credits",
 			Help:      "Per project credits",
 		},
-		[]string{"reponame"},
+		[]string{"host", "reponame"},
 	)
 	perProjectSecondsGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -86,7 +86,7 @@ var (
 			Name:      "per_project_seconds",
 			Help:      "Per project seconds",
 		},
-		[]string{"reponame"},
+		[]string{"host", "reponame"},
 	)
 	perProjectDLCGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -94,7 +94,7 @@ var (
 			Name:      "per_project_dlc_credits",
 			Help:      "Per project DLC credits",
 		},
-		[]string{"reponame"},
+		[]string{"host", "reponame"},
 	)
 	perProjectComputeCreditsGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -102,7 +102,7 @@ var (
 			Name:      "per_project_compute_credits",
 			Help:      "Per project compute credits",
 		},
-		[]string{"reponame"})
+		[]string{"host", "reponame"})
 )
 
 type graphqlQuery struct {
@@ -166,7 +166,7 @@ func collect() {
 	}
 
 	for _, project := range projects {
-		labels := prometheus.Labels{"reponame": project.S("project").S("name").Data().(string)}
+		labels := prometheus.Labels{"host": "circleci.com", "reponame": project.S("project").S("name").Data().(string)}
 		perProjectCreditsGauge.With(labels).Set(project.S("aggregate").S("credits").Data().(float64))
 		perProjectSecondsGauge.With(labels).Set(project.S("aggregate").S("seconds").Data().(float64))
 		perProjectDLCGauge.With(labels).Set(project.S("aggregate").S("dlcCredits").Data().(float64))
