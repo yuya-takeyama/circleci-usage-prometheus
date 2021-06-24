@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/Jeffail/gabs"
@@ -157,7 +158,11 @@ func collect() {
 	metrics := jsonParsed.S("data").S("plan").S("billingPeriods").Index(0).S("metrics")
 	activeUsersGauge.Set(metrics.S("activeUsers").S("totalCount").Data().(float64))
 	projectsGauge.Set(metrics.S("projects").S("totalCount").Data().(float64))
-	totalCreditsGauge.Set(metrics.S("total").S("credits").Data().(float64))
+	credits, creditsErr := strconv.Atoi(metrics.S("total").S("credits").Data().(string))
+	if creditsErr != nil {
+		panic(creditsErr)
+	}
+	totalCreditsGauge.Set(float64(credits))
 	totalSecondsGauge.Set(metrics.S("total").S("seconds").Data().(float64))
 
 	projects, projectsErr := metrics.S("byProject").S("nodes").Children()
@@ -167,10 +172,18 @@ func collect() {
 
 	for _, project := range projects {
 		labels := prometheus.Labels{"reponame": project.S("project").S("name").Data().(string)}
-		perProjectCreditsGauge.With(labels).Set(project.S("aggregate").S("credits").Data().(float64))
+		prjCredits, prjCreditsErr := strconv.Atoi(project.S("aggregate").S("credits").Data().(string))
+		if prjCreditsErr != nil {
+			panic(prjCreditsErr)
+		}
+		perProjectCreditsGauge.With(labels).Set(float64(prjCredits))
 		perProjectSecondsGauge.With(labels).Set(project.S("aggregate").S("seconds").Data().(float64))
 		perProjectDLCGauge.With(labels).Set(project.S("aggregate").S("dlcCredits").Data().(float64))
-		perProjectComputeCreditsGauge.With(labels).Set(project.S("aggregate").S("computeCredits").Data().(float64))
+		prjAggCredits, prjAggCreditsErr := strconv.Atoi(project.S("aggregate").S("computeCredits").Data().(string))
+		if prjAggCreditsErr != nil {
+			panic(prjCreditsErr)
+		}
+		perProjectComputeCreditsGauge.With(labels).Set(float64(prjAggCredits))
 	}
 }
 
